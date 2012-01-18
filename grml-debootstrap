@@ -36,6 +36,7 @@ SCRIPTS='yes'
 SECURE='yes'
 TIMEZONE='Europe/Vienna'
 TUNE2FS='tune2fs -c0 -i0'
+UPGRADE_SYSTEM='yes'
 VMSIZE="2G"
 
 # inside the chroot system locales might not be available, so use minimum:
