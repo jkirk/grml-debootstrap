@@ -5,7 +5,7 @@
 # Bug-Reports:   see https://grml.org/bugs/
 # License:       This file is licensed under the GPL v2+
 ################################################################################
-# shellcheck disable=SC2001,SC2181
+# shellcheck disable=SC2001,SC2181,SC2015
 
 # error_handler {{{
 error_handler() {
@@ -821,7 +821,7 @@ prompt_for_bootmanager()
 prompt_for_release()
 {
   [ -n "$RELEASE" ] && DEFAULT_RELEASE="$RELEASE" || DEFAULT_RELEASE='bullseye'
-  RELEASE="$(dialog --stdout --title "${PN}" --default-item $DEFAULT_RELEASE --menu \
+  RELEASE="$(dialog --stdout --title "${PN}" --default-item "${DEFAULT_RELEASE}" --menu \
             "Please enter the Debian release you would like to use for installation:" \
             0 50 8 \
             buster   Debian/10 \
@@ -873,7 +873,7 @@ prompt_for_mirror()
 {
   [ -n "$ISO" ] && DEFAULT_MIRROR='local' || DEFAULT_MIRROR='net'
 
-  CHOOSE_MIRROR=$(dialog --stdout --title "$PN" --default-item $DEFAULT_MIRROR \
+  CHOOSE_MIRROR=$(dialog --stdout --title "${PN}" --default-item "${DEFAULT_MIRROR}" \
           --menu "Where do you want to install from?" 0 0 0 \
             net   "install via network (downloading from mirror)" \
             local "install from local directory/mirror"
@@ -881,15 +881,17 @@ prompt_for_mirror()
 
   if [ "$CHOOSE_MIRROR" = 'net' ] ; then
      [ -n "$MIRROR" ] || MIRROR='http://deb.debian.org/debian'
+     # shellcheck disable=SC2086
      MIRROR="$(dialog --stdout --title "${PN}" --inputbox \
                "Please enter Debian mirror you would like to use for installing packages." \
-               0 0 $MIRROR)" || bailout
+               0 0 ${MIRROR})" || bailout
 
   else # CHOOSE_MIRROR == local
      [ -n "$ISO" ] || ISO='/mnt/mirror'
+     # shellcheck disable=SC2086
      ISO="$(dialog --stdout --title "${PN}" --inputbox \
                "Please enter directory name you would like to use for installing packages." \
-               0 0 $ISO)" || bailout
+               0 0 ${ISO})" || bailout
   fi
 }
 # }}}
@@ -1816,12 +1818,12 @@ preparechroot() {
   [ -n "$TUNE2FS" ]                   && echo "TUNE2FS='${TUNE2FS//\'/\'\\\'\'}'"                                   >> "$CHROOT_VARIABLES"
   [ -n "$VMSIZE" ]                    && echo "VMSIZE='${VMSIZE//\'/\'\\\'\'}'"                                     >> "$CHROOT_VARIABLES"
 
-  cp $VERBOSE "${CONFFILES}"/chroot-script "${MNTPOINT}"/bin/chroot-script
+  cp "${VERBOSE}" "${CONFFILES}"/chroot-script "${MNTPOINT}"/bin/chroot-script
   chmod 755 "${MNTPOINT}"/bin/chroot-script
   [ -d "$MNTPOINT"/etc/debootstrap/ ] || mkdir "$MNTPOINT"/etc/debootstrap/
 
   # make sure we have our files for later use via chroot-script
-  cp $VERBOSE "${CONFFILES}/config"           "${MNTPOINT}"/etc/debootstrap/
+  cp "${VERBOSE}" "${CONFFILES}/config"           "${MNTPOINT}"/etc/debootstrap/
   # make sure we adjust the configuration variables accordingly:
   sed -i "s#RELEASE=.*#RELEASE=\"$RELEASE\"#" "${MNTPOINT}"/etc/debootstrap/config
   sed -i "s#TARGET=.*#TARGET=\"$TARGET\"#"    "${MNTPOINT}"/etc/debootstrap/config
@@ -1840,41 +1842,41 @@ preparechroot() {
       PACKAGES_FILE="packages-arm64"
     fi
 
-    cp $VERBOSE "${_opt_packages:-$CONFFILES/$PACKAGES_FILE}" \
+    cp "${VERBOSE}" "${_opt_packages:-$CONFFILES/$PACKAGES_FILE}" \
       "${MNTPOINT}/etc/debootstrap/${PACKAGES_FILE}"
   fi
 
   # debconf preseeding:
   _opt_debconf=${_opt_debconf:-$CONFFILES/debconf-selections}
   [ -f "${_opt_debconf}" ] && [ "$DEBCONF" = 'yes' ] && \
-    cp $VERBOSE "${_opt_debconf}" "${MNTPOINT}"/etc/debootstrap/debconf-selections
+    cp "${VERBOSE}" "${_opt_debconf}" "${MNTPOINT}"/etc/debootstrap/debconf-selections
 
   # copy scripts that should be executed inside the chroot:
   _opt_chroot_scripts=${_opt_chroot_scripts:-$CONFFILES/chroot-scripts/}
   [ -d "$_opt_chroot_scripts" ] && [ "$CHROOT_SCRIPTS" = 'yes' ] && {
     mkdir -p "${MNTPOINT}"/etc/debootstrap/chroot-scripts
-    cp -a $VERBOSE "${_opt_chroot_scripts}"/* "${MNTPOINT}"/etc/debootstrap/chroot-scripts/
+    cp -a "$VERBOSE" "${_opt_chroot_scripts}"/* "${MNTPOINT}"/etc/debootstrap/chroot-scripts/
   }
 
   # notice: do NOT use $CHROOT_VARIABLES inside chroot but statically file instead!
-  cp $VERBOSE "${CHROOT_VARIABLES}" "${MNTPOINT}"/etc/debootstrap/variables
+  cp "${VERBOSE}" "${CHROOT_VARIABLES}" "${MNTPOINT}"/etc/debootstrap/variables
 
-  cp $VERBOSE -a -L "${CONFFILES}"/extrapackages/ "${MNTPOINT}"/etc/debootstrap/
+  cp "${VERBOSE}" -a -L "${CONFFILES}"/extrapackages/ "${MNTPOINT}"/etc/debootstrap/
 
   # make sure we can access network [relevant for cdebootstrap/mmdebstrap]
-  [ -f "${MNTPOINT}"/etc/resolv.conf ] || cp $VERBOSE /etc/resolv.conf "${MNTPOINT}"/etc/resolv.conf
+  [ -f "${MNTPOINT}"/etc/resolv.conf ] || cp "${VERBOSE}" /etc/resolv.conf "${MNTPOINT}"/etc/resolv.conf
 
   # setup default locales
-  [ -n "$LOCALES" ] && cp $VERBOSE "${CONFFILES}"/locale.gen "${MNTPOINT}"/etc/locale.gen
+  [ -n "$LOCALES" ] && cp "${VERBOSE}" "${CONFFILES}"/locale.gen "${MNTPOINT}"/etc/locale.gen
 
   # copy any existing files to chroot
-  [ -d "${CONFFILES}"/bin   ] && cp $VERBOSE -a -L "${CONFFILES}"/bin/*   "${MNTPOINT}"/bin/
-  [ -d "${CONFFILES}"/boot  ] && cp $VERBOSE -a -L "${CONFFILES}"/boot/*  "${MNTPOINT}"/boot/
-  [ -d "${CONFFILES}"/etc   ] && cp $VERBOSE -a -L "${CONFFILES}"/etc/*   "${MNTPOINT}"/etc/
-  [ -d "${CONFFILES}"/sbin  ] && cp $VERBOSE -a -L "${CONFFILES}"/sbin/*  "${MNTPOINT}"/sbin/
-  [ -d "${CONFFILES}"/share ] && cp $VERBOSE -a -L "${CONFFILES}"/share/* "${MNTPOINT}"/share/
-  [ -d "${CONFFILES}"/usr   ] && cp $VERBOSE -a -L "${CONFFILES}"/usr/*   "${MNTPOINT}"/usr/
-  [ -d "${CONFFILES}"/var   ] && cp $VERBOSE -a -L "${CONFFILES}"/var/*   "${MNTPOINT}"/var/
+  [ -d "${CONFFILES}"/bin   ] && cp "${VERBOSE}" -a -L "${CONFFILES}"/bin/*   "${MNTPOINT}"/bin/
+  [ -d "${CONFFILES}"/boot  ] && cp "${VERBOSE}" -a -L "${CONFFILES}"/boot/*  "${MNTPOINT}"/boot/
+  [ -d "${CONFFILES}"/etc   ] && cp "${VERBOSE}" -a -L "${CONFFILES}"/etc/*   "${MNTPOINT}"/etc/
+  [ -d "${CONFFILES}"/sbin  ] && cp "${VERBOSE}" -a -L "${CONFFILES}"/sbin/*  "${MNTPOINT}"/sbin/
+  [ -d "${CONFFILES}"/share ] && cp "${VERBOSE}" -a -L "${CONFFILES}"/share/* "${MNTPOINT}"/share/
+  [ -d "${CONFFILES}"/usr   ] && cp "${VERBOSE}" -a -L "${CONFFILES}"/usr/*   "${MNTPOINT}"/usr/
+  [ -d "${CONFFILES}"/var   ] && cp "${VERBOSE}" -a -L "${CONFFILES}"/var/*   "${MNTPOINT}"/var/
 
   # network setup
   DEFAULT_INTERFACES="# /etc/network/interfaces - generated by grml-debootstrap
@@ -1929,7 +1931,7 @@ iface ${interface} inet dhcp
   elif [ -r /etc/network/interfaces ] ; then
     einfo "Copying /etc/network/interfaces from host to target system"
     mkdir -p "${MNTPOINT}/etc/network"
-    cp $VERBOSE /etc/network/interfaces "${MNTPOINT}/etc/network/interfaces"
+    cp "${VERBOSE}" /etc/network/interfaces "${MNTPOINT}/etc/network/interfaces"
   else
     ewarn "Couldn't read /etc/network/interfaces, installing default /etc/network/interfaces"
     mkdir -p "${MNTPOINT}/etc/network"
