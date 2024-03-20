@@ -1,0 +1,11 @@
+#!/bin/bash
+# Filename:      grub_serial
+# Purpose:       enable serial console and reboot on panic after 30s
+# Authors:       grml-team (grml.org), (c) Darshaka Pathirana <dpat@grml.org>
+# Bug-Reports:   see https://grml.org/bugs/
+# License:       This file is licensed under the GPL v2.
+################################################################################
+
+sed -i 's/^GRUB_CMDLINE_LINUX_DEFAULT=.*/GRUB_CMDLINE_LINUX_DEFAULT="panic=30"/' /etc/default/grub
+sed -i 's/^GRUB_CMDLINE_LINUX=.*/GRUB_CMDLINE_LINUX="console=ttyS0,115200 console=tty0"/' /etc/default/grub
+DEBIAN_FRONTEND=noninteractive dpkg-reconfigure grub-pc

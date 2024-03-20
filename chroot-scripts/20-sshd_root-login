@@ -1,0 +1,9 @@
+#!/bin/bash
+# Filename:      sshd_root-login
+# Purpose:       enable root password login
+# Authors:       grml-team (grml.org), (c) Darshaka Pathirana <dpat@grml.org>
+# Bug-Reports:   see https://grml.org/bugs/
+# License:       This file is licensed under the GPL v2.
+################################################################################
+
+sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config

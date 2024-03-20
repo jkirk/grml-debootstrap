@@ -1,0 +1,36 @@
+#!/bin/bash
+# Filename:      systemd_networking
+# Purpose:       enable systemd-networking, install systemd-resolved, remove ifupdown + resolved
+# Authors:       grml-team (grml.org), (c) Darshaka Pathirana <dpat@grml.org>
+# Bug-Reports:   see https://grml.org/bugs/
+# License:       This file is licensed under the GPL v2.
+################################################################################
+
+DEBIAN_FRONTEND=noninteractive apt-get -y purge resolvconf ifupdown
+DEBIAN_FRONTEND=noninteractive apt-get install --no-install-recommends systemd-resolved
+
+systemctl mask networking.service
+systemctl enable systemd-networkd
+
+[[ -f /etc/network/interfaces ]] && rm /etc/network/interfaces
+
+cat >> /etc/systemd/resolved.conf << EOF
+[Resolve]
+DNSSEC=no
+MulticastDNS=no
+LLMNR=no
+EOF
+
+cat > /etc/systemd/network/99-dhcp.network << EOF
+[Match]
+Name=en*
+Name=vlan*
+Name=eth*
+[Network]
+DHCP=ipv4
+IPv6AcceptRA=no
+LinkLocalAddressing=no
+EmitLLDP=true
+[DHCP]
+UseDomains=yes
+EOF
